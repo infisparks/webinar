@@ -567,7 +567,7 @@
 
       // 1. Render Desktop Table Rows
       tbody.innerHTML = filteredRegistrations.map((item, index) => {
-        const waMsg = encodeURIComponent(`Hi ${item.fullName}, thanks for registering for the 24/7 Client Acquisition Workshop! 🚀\n\nJoin our VIP WhatsApp Group to get your Zoom link & resources:\n👉 https://chat.whatsapp.com/LEj1czy1JnjLeaUz64qHNi\n\n— Faiz Ansari, First Option Agency`);
+        const waMsg = encodeURIComponent(`Hi ${item.fullName}, your registration for the 24/7 Client Acquisition Workshop has been received.\n\nPlease join the attendee communication group to access your live session link and workshop materials:\n👉 https://chat.whatsapp.com/LEj1czy1JnjLeaUz64qHNi\n\n— First Option Agency`);
         const waUrl = `https://wa.me/91${item.phone.replace(/[^0-9]/g, '')}?text=${waMsg}`;
 
         return `
@@ -617,7 +617,7 @@
 
       // 2. Render Mobile Cards List (Touch Optimized)
       mobileContainer.innerHTML = filteredRegistrations.map((item, index) => {
-        const waMsg = encodeURIComponent(`Hi ${item.fullName}, thanks for registering for the 24/7 Client Acquisition Workshop! 🚀\n\nJoin our VIP WhatsApp Group to get your Zoom link & resources:\n👉 https://chat.whatsapp.com/LEj1czy1JnjLeaUz64qHNi\n\n— Faiz Ansari, First Option Agency`);
+        const waMsg = encodeURIComponent(`Hi ${item.fullName}, your registration for the 24/7 Client Acquisition Workshop has been received.\n\nPlease join the attendee communication group to access your live session link and workshop materials:\n👉 https://chat.whatsapp.com/LEj1czy1JnjLeaUz64qHNi\n\n— First Option Agency`);
         const waUrl = `https://wa.me/91${item.phone.replace(/[^0-9]/g, '')}?text=${waMsg}`;
 
         return `
