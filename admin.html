@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full antialiased">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+  <title>Admin Dashboard | Webinar Leads Portal</title>
+  <meta name="robots" content="noindex, nofollow" />
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Firebase SDKs (Realtime DB, Auth & App Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <!-- SheetJS for XLSX Excel Export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      box-sizing: border-box;
+    }
+    body {
+      background-color: #08080a;
+      color: #ffffff;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dark-card {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: linear-gradient(180deg, #141418 0%, #0c0c0f 100%);
+    }
+    .cta-gold-btn {
+      background: linear-gradient(180deg, #ffcf54 0%, #f5a623 100%);
+      box-shadow: 0 4px 15px rgba(245, 166, 35, 0.35);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .cta-gold-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(245, 166, 35, 0.45);
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #08080a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #f5a623;
+    }
+  </style>
+</head>
+<body class="min-h-full bg-[#08080a] text-slate-100 selection:bg-amber-500 selection:text-slate-950 flex flex-col">
+
+  <!-- Fullscreen Auth Loading Shield -->
+  <div id="authGuardScreen" class="fixed inset-0 z-50 bg-[#08080a] flex flex-col items-center justify-center space-y-4">
+    <div class="w-12 h-12 rounded-full border-4 border-amber-500/20 border-t-amber-400 animate-spin"></div>
+    <p class="text-sm font-bold text-slate-300">Verifying Admin Access...</p>
+  </div>
+
+  <!-- Main Admin Content -->
+  <div id="adminApp" class="hidden min-h-screen flex flex-col">
+    
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-40 bg-[#0c0c0f]/95 border-b border-zinc-800/90 backdrop-blur-md px-4 sm:px-8 py-3.5 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 text-slate-950 flex items-center justify-center font-black text-base shadow">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-base sm:text-lg font-black text-white leading-tight">First Option Agency</h1>
+            <span class="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Admin Portal</span>
+          </div>
+          <p class="text-[11px] text-slate-400">The 24/7 Client Acquisition Workshop Leads</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2.5 sm:space-x-4">
+        <div class="hidden md:flex items-center space-x-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-xl text-xs font-mono text-slate-300">
+          <i class="fa-solid fa-clock text-amber-400"></i>
+          <span id="istClock">IST Time</span>
+        </div>
+
+        <a
+          href="index.html"
+          target="_blank"
+          class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-slate-300 hover:text-white px-3 py-2 rounded-xl text-xs font-bold transition-colors flex items-center space-x-1.5"
+          title="View Live Landing Page"
+        >
+          <i class="fa-solid fa-external-link text-[10px]"></i>
+          <span class="hidden sm:inline">Live Page</span>
+        </a>
+
+        <button
+          onclick="handleLogout()"
+          class="bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-400 hover:text-red-300 px-3.5 py-2 rounded-xl text-xs font-bold transition-colors flex items-center space-x-1.5 cursor-pointer"
+        >
+          <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Dashboard Container -->
+    <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+      <!-- Metrics Row -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <!-- Card 1 -->
+        <div class="dark-card rounded-2xl p-4 sm:p-5 space-y-1">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <span>Total Leads</span>
+            <div class="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-users"></i>
+            </div>
+          </div>
+          <div id="metricTotalLeads" class="text-2xl sm:text-3xl font-black text-white">0</div>
+          <div class="text-[10px] text-slate-400 font-medium">All registered webinar attendees</div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="dark-card rounded-2xl p-4 sm:p-5 space-y-1">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <span>Today's Registrations</span>
+            <div class="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-calendar-day"></i>
+            </div>
+          </div>
+          <div id="metricTodayLeads" class="text-2xl sm:text-3xl font-black text-emerald-400">0</div>
+          <div class="text-[10px] text-slate-400 font-medium">Recorded in IST today</div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="dark-card rounded-2xl p-4 sm:p-5 space-y-1">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <span>Filtered Output</span>
+            <div class="w-7 h-7 rounded-lg bg-blue-500/15 text-blue-400 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-filter"></i>
+            </div>
+          </div>
+          <div id="metricFilteredCount" class="text-2xl sm:text-3xl font-black text-amber-400">0</div>
+          <div class="text-[10px] text-slate-400 font-medium">Matching search &amp; date filters</div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="dark-card rounded-2xl p-4 sm:p-5 space-y-1">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <span>Top Category</span>
+            <div class="w-7 h-7 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-chart-pie"></i>
+            </div>
+          </div>
+          <div id="metricTopCategory" class="text-sm sm:text-base font-black text-purple-300 truncate pt-1">—</div>
+          <div class="text-[10px] text-slate-400 font-medium">Highest registering sector</div>
+        </div>
+      </div>
+
+      <!-- Filters & Actions Card -->
+      <div class="dark-card rounded-3xl p-4 sm:p-6 space-y-4 shadow-xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
+          <div>
+            <h2 class="text-base sm:text-lg font-black text-white">Search &amp; Filter Registrations</h2>
+            <p class="text-xs text-slate-400">Filter by full name, phone number, category, or custom IST date-time range</p>
+          </div>
+
+          <!-- Export Action Buttons -->
+          <div class="flex items-center space-x-2 flex-wrap">
+            <button
+              onclick="exportToExcel()"
+              class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl shadow transition-all flex items-center space-x-1.5 active:scale-95 cursor-pointer"
+            >
+              <i class="fa-solid fa-file-excel text-sm"></i>
+              <span>Export Excel (XLSX)</span>
+            </button>
+
+            <button
+              onclick="exportToCSV()"
+              class="bg-zinc-800 hover:bg-zinc-700 text-slate-200 border border-zinc-700 font-bold text-xs px-3.5 py-2.5 rounded-xl shadow transition-all flex items-center space-x-1.5 active:scale-95 cursor-pointer"
+            >
+              <i class="fa-solid fa-file-csv text-sm text-amber-400"></i>
+              <span>Export CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Controls Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-left text-xs">
+          
+          <!-- 1. Search Query Input -->
+          <div class="space-y-1">
+            <label class="font-bold text-slate-300">Search Keyword</label>
+            <div class="relative">
+              <input
+                type="text"
+                id="filterSearchInput"
+                oninput="applyFilters()"
+                placeholder="Name, Phone, Category..."
+                class="w-full bg-zinc-900 border border-zinc-800 focus:border-amber-400 rounded-xl px-3 py-2.5 text-xs text-white placeholder-zinc-500 outline-none"
+              />
+              <i class="fa-solid fa-magnifying-glass absolute right-3 top-3 text-zinc-500 text-xs"></i>
+            </div>
+          </div>
+
+          <!-- 2. Category Select -->
+          <div class="space-y-1">
+            <label class="font-bold text-slate-300">Business Category</label>
+            <select
+              id="filterCategorySelect"
+              onchange="applyFilters()"
+              class="w-full bg-zinc-900 border border-zinc-800 focus:border-amber-400 rounded-xl px-3 py-2.5 text-xs text-white outline-none"
+            >
+              <option value="ALL">All Categories</option>
+              <option value="Doctor / Clinic / Hospital">Doctor / Clinic</option>
+              <option value="Manufacturer / Wholesaler">Manufacturer / B2B</option>
+              <option value="IT Company / Software / Agency">IT &amp; Tech Agency</option>
+              <option value="Consultant / Coach">Consultant / Coach</option>
+              <option value="Real Estate / Builder">Real Estate</option>
+              <option value="Retail / Local Business">Retail / Local Business</option>
+              <option value="Other Startup / Business">Other Startup</option>
+            </select>
+          </div>
+
+          <!-- 3. Start Date & Time (IST) -->
+          <div class="space-y-1">
+            <label class="font-bold text-slate-300">Start Date &amp; Time (IST)</label>
+            <input
+              type="datetime-local"
+              id="filterStartDate"
+              onchange="applyFilters()"
+              class="w-full bg-zinc-900 border border-zinc-800 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white outline-none font-mono"
+            />
+          </div>
+
+          <!-- 4. End Date & Time (IST) -->
+          <div class="space-y-1">
+            <label class="font-bold text-slate-300">End Date &amp; Time (IST)</label>
+            <input
+              type="datetime-local"
+              id="filterEndDate"
+              onchange="applyFilters()"
+              class="w-full bg-zinc-900 border border-zinc-800 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white outline-none font-mono"
+            />
+          </div>
+        </div>
+
+        <!-- Quick Presets Bar -->
+        <div class="flex items-center justify-between pt-2 text-xs flex-wrap gap-2">
+          <div class="flex items-center space-x-1.5 flex-wrap gap-y-1.5">
+            <span class="text-slate-400 font-semibold mr-1 text-[11px]">Quick Date Presets:</span>
+            <button onclick="setDatePreset('today')" class="preset-btn px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-slate-300 hover:text-white hover:bg-zinc-800 font-medium text-[11px] transition-colors">Today</button>
+            <button onclick="setDatePreset('yesterday')" class="preset-btn px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-slate-300 hover:text-white hover:bg-zinc-800 font-medium text-[11px] transition-colors">Yesterday</button>
+            <button onclick="setDatePreset('7days')" class="preset-btn px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-slate-300 hover:text-white hover:bg-zinc-800 font-medium text-[11px] transition-colors">Last 7 Days</button>
+            <button onclick="setDatePreset('thismonth')" class="preset-btn px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-slate-300 hover:text-white hover:bg-zinc-800 font-medium text-[11px] transition-colors">This Month</button>
+            <button onclick="setDatePreset('all')" class="preset-btn px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-amber-400 hover:text-amber-300 hover:bg-zinc-800 font-bold text-[11px] transition-colors">All Time</button>
+          </div>
+
+          <button
+            onclick="resetAllFilters()"
+            class="text-slate-400 hover:text-amber-400 font-bold text-[11px] flex items-center space-x-1 transition-colors ml-auto"
+          >
+            <i class="fa-solid fa-arrows-rotate text-[10px]"></i>
+            <span>Reset All Filters</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Leads Data Table Card -->
+      <div class="dark-card rounded-3xl overflow-hidden shadow-2xl space-y-3 p-4 sm:p-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <h3 class="text-base sm:text-lg font-black text-white">Registered Attendees</h3>
+            <span id="tableCountBadge" class="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs font-mono font-bold px-2 py-0.5 rounded-full">0 Leads</span>
+          </div>
+
+          <button
+            onclick="fetchRegistrations()"
+            class="bg-zinc-900 hover:bg-zinc-800 text-slate-300 hover:text-white p-2 rounded-xl text-xs transition-colors border border-zinc-800"
+            title="Refresh Data"
+          >
+            <i class="fa-solid fa-rotate text-xs"></i>
+          </button>
+        </div>
+
+        <!-- Table Responsive Container -->
+        <div class="overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-950">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-zinc-900/90 text-slate-400 font-bold uppercase tracking-wider border-b border-zinc-800 text-[11px]">
+                <th class="py-3 px-3.5">#</th>
+                <th class="py-3 px-3.5">Full Name</th>
+                <th class="py-3 px-3.5">WhatsApp Number</th>
+                <th class="py-3 px-3.5">Category</th>
+                <th class="py-3 px-3.5">Monthly Revenue</th>
+                <th class="py-3 px-3.5">Registration Time (IST)</th>
+                <th class="py-3 px-3.5 text-right">Direct Action</th>
+              </tr>
+            </thead>
+            <tbody id="leadsTableBody" class="divide-y divide-zinc-800/80 text-slate-200">
+              <!-- Dynamically populated rows -->
+              <tr>
+                <td colspan="7" class="py-8 text-center text-slate-500">
+                  <i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading registrations...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center text-slate-600 text-xs py-4 border-t border-zinc-900">
+      First Option Agency Admin Portal • Indian Standard Time Zone (Asia/Kolkata)
+    </footer>
+  </div>
+
+  <script>
+    const ALLOWED_ADMIN_UID = "3uVp63ijT3Rb9Z9pdhLj8UkpFS62";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCKq8zf-1Lmod_ac7KKpXstr7uXZz_f1PQ",
+      authDomain: "webinarfirst.firebaseapp.com",
+      databaseURL: "https://webinarfirst-default-rtdb.firebaseio.com",
+      projectId: "webinarfirst",
+      storageBucket: "webinarfirst.firebasestorage.app",
+      messagingSenderId: "566630866467",
+      appId: "1:566630866467:web:5e132421e144534c139b96"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const rtdb = firebase.database();
+
+    let allRegistrations = [];
+    let filteredRegistrations = [];
+
+    // Live IST Clock
+    function updateISTClock() {
+      const now = new Date();
+      const options = { timeZone: "Asia/Kolkata", hour12: true, hour: "2-digit", minute: "2-digit", second: "2-digit", day: "2-digit", month: "short", year: "numeric" };
+      const istString = now.toLocaleString("en-IN", options);
+      const clockEl = document.getElementById("istClock");
+      if (clockEl) clockEl.innerText = istString;
+    }
+    setInterval(updateISTClock, 1000);
+    updateISTClock();
+
+    // 1. Auth Guard Protection
+    auth.onAuthStateChanged((user) => {
+      if (!user || user.uid !== ALLOWED_ADMIN_UID) {
+        // Redirect unauthorized user to login
+        window.location.href = "login.html";
+      } else {
+        document.getElementById("authGuardScreen").classList.add("hidden");
+        document.getElementById("adminApp").classList.remove("hidden");
+        listenToRegistrationsRealtime();
+      }
+    });
+
+    async function handleLogout() {
+      if (confirm("Are you sure you want to sign out of the Admin Dashboard?")) {
+        await auth.signOut();
+        window.location.href = "login.html";
+      }
+    }
+
+    // 2. Realtime Listener for Registrations from Firebase Realtime DB
+    function listenToRegistrationsRealtime() {
+      const tbody = document.getElementById("leadsTableBody");
+      tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-500"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Connecting to Realtime Database...</td></tr>`;
+
+      rtdb.ref("webinar_registrations").on("value", (snapshot) => {
+        allRegistrations = [];
+        const dataVal = snapshot.val();
+
+        if (dataVal) {
+          Object.keys(dataVal).forEach((key) => {
+            const data = dataVal[key];
+
+            // Parse timestamp safely
+            let jsDate = null;
+            if (data.createdAt && typeof data.createdAt === "number") {
+              jsDate = new Date(data.createdAt);
+            } else if (data.timestampISO) {
+              jsDate = new Date(data.timestampISO);
+            } else {
+              jsDate = new Date();
+            }
+
+            allRegistrations.push({
+              id: key,
+              fullName: data.fullName || "—",
+              phone: data.phone || "—",
+              fullPhoneNumber: data.fullPhoneNumber || ("+91 " + (data.phone || "")),
+              category: data.category || "General",
+              revenue: data.revenue || "—",
+              jsDate: jsDate,
+              timestampMs: jsDate.getTime(),
+              dateFormattedIST: formatIST(jsDate),
+              workshop: data.workshop || "The 24/7 Client Acquisition System"
+            });
+          });
+        }
+
+        // Sort descending by date
+        allRegistrations.sort((a, b) => b.timestampMs - a.timestampMs);
+
+        updateMetrics();
+        applyFilters();
+      }, (err) => {
+        console.error("Realtime DB read error:", err);
+        tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-red-400"><i class="fa-solid fa-circle-exclamation mr-2"></i> Error loading registrations: ${err.message}</td></tr>`;
+      });
+    }
+
+    function fetchRegistrations() {
+      listenToRegistrationsRealtime();
+    }
+
+    function formatIST(date) {
+      if (!date || isNaN(date.getTime())) return "—";
+      return date.toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+      });
+    }
+
+    function updateMetrics() {
+      document.getElementById("metricTotalLeads").innerText = allRegistrations.length;
+
+      // Count today's leads in IST
+      const nowIST = new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
+      const todayCount = allRegistrations.filter(r => {
+        const itemIST = r.jsDate.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
+        return itemIST === nowIST;
+      }).length;
+      document.getElementById("metricTodayLeads").innerText = todayCount;
+
+      // Category breakdown
+      const catCount = {};
+      allRegistrations.forEach(r => {
+        const c = r.category || "Other";
+        catCount[c] = (catCount[c] || 0) + 1;
+      });
+      let topCat = "—";
+      let maxC = 0;
+      Object.keys(catCount).forEach(k => {
+        if (catCount[k] > maxC) {
+          maxC = catCount[k];
+          topCat = `${k} (${maxC})`;
+        }
+      });
+      document.getElementById("metricTopCategory").innerText = topCat;
+    }
+
+    // 3. Filter Logic (Search + Category + Date-Time IST Range)
+    function applyFilters() {
+      const search = (document.getElementById("filterSearchInput").value || "").toLowerCase().trim();
+      const cat = document.getElementById("filterCategorySelect").value;
+      const startVal = document.getElementById("filterStartDate").value;
+      const endVal = document.getElementById("filterEndDate").value;
+
+      let startMs = startVal ? new Date(startVal).getTime() : 0;
+      let endMs = endVal ? new Date(endVal).getTime() : Infinity;
+
+      filteredRegistrations = allRegistrations.filter((item) => {
+        // Text Search
+        const matchSearch =
+          !search ||
+          item.fullName.toLowerCase().includes(search) ||
+          item.phone.toLowerCase().includes(search) ||
+          item.category.toLowerCase().includes(search) ||
+          item.revenue.toLowerCase().includes(search);
+
+        // Category Filter
+        const matchCat = (cat === "ALL") || (item.category === cat);
+
+        // Date-Time Range Filter
+        const matchDate = item.timestampMs >= startMs && item.timestampMs <= endMs;
+
+        return matchSearch && matchCat && matchDate;
+      });
+
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById("leadsTableBody");
+      document.getElementById("metricFilteredCount").innerText = filteredRegistrations.length;
+      document.getElementById("tableCountBadge").innerText = `${filteredRegistrations.length} of ${allRegistrations.length} Leads`;
+
+      if (filteredRegistrations.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="py-10 text-center text-slate-500">
+              <i class="fa-regular fa-folder-open text-2xl mb-2 block"></i>
+              No registrations found matching the applied filters.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filteredRegistrations.map((item, index) => {
+        const waMsg = encodeURIComponent(`Hi ${item.fullName}, thank you for registering for The 24/7 Client Acquisition Live Workshop. Here is your VIP Zoom link & Scorecard access.`);
+        const waUrl = `https://wa.me/91${item.phone.replace(/[^0-9]/g, '')}?text=${waMsg}`;
+
+        return `
+          <tr class="hover:bg-zinc-900/60 transition-colors">
+            <td class="py-3 px-3.5 font-mono text-slate-500 text-xs font-bold">${index + 1}</td>
+            <td class="py-3 px-3.5 font-bold text-white whitespace-nowrap">
+              <div class="flex items-center space-x-2">
+                <div class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-black uppercase">
+                  ${(item.fullName[0] || 'U')}
+                </div>
+                <span>${escapeHtml(item.fullName)}</span>
+              </div>
+            </td>
+            <td class="py-3 px-3.5 font-mono text-emerald-400 font-bold whitespace-nowrap">
+              <a href="${waUrl}" target="_blank" class="hover:underline flex items-center space-x-1.5 text-emerald-400">
+                <i class="fa-brands fa-whatsapp text-sm"></i>
+                <span>+91 ${escapeHtml(item.phone)}</span>
+              </a>
+            </td>
+            <td class="py-3 px-3.5 whitespace-nowrap">
+              <span class="bg-zinc-800 text-slate-300 px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-zinc-700">
+                ${escapeHtml(item.category)}
+              </span>
+            </td>
+            <td class="py-3 px-3.5 whitespace-nowrap">
+              <span class="bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold">
+                ${escapeHtml(item.revenue)}
+              </span>
+            </td>
+            <td class="py-3 px-3.5 font-mono text-slate-300 text-[11px] whitespace-nowrap">
+              ${escapeHtml(item.dateFormattedIST)}
+            </td>
+            <td class="py-3 px-3.5 text-right whitespace-nowrap">
+              <a
+                href="${waUrl}"
+                target="_blank"
+                class="inline-flex items-center space-x-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors"
+                title="Chat on WhatsApp"
+              >
+                <i class="fa-brands fa-whatsapp"></i>
+                <span>WhatsApp</span>
+              </a>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function escapeHtml(text) {
+      if (!text) return "";
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // 4. Quick Date Presets
+    function setDatePreset(type) {
+      const startEl = document.getElementById("filterStartDate");
+      const endEl = document.getElementById("filterEndDate");
+
+      const now = new Date();
+      const toLocalISO = (d) => {
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      };
+
+      if (type === "today") {
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+        startEl.value = toLocalISO(start);
+        endEl.value = toLocalISO(end);
+      } else if (type === "yesterday") {
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0);
+        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59);
+        startEl.value = toLocalISO(start);
+        endEl.value = toLocalISO(end);
+      } else if (type === "7days") {
+        const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        startEl.value = toLocalISO(start);
+        endEl.value = toLocalISO(now);
+      } else if (type === "thismonth") {
+        const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+        startEl.value = toLocalISO(start);
+        endEl.value = toLocalISO(now);
+      } else if (type === "all") {
+        startEl.value = "";
+        endEl.value = "";
+      }
+
+      applyFilters();
+    }
+
+    function resetAllFilters() {
+      document.getElementById("filterSearchInput").value = "";
+      document.getElementById("filterCategorySelect").value = "ALL";
+      document.getElementById("filterStartDate").value = "";
+      document.getElementById("filterEndDate").value = "";
+      applyFilters();
+    }
+
+    // 5. Export to Excel (.xlsx)
+    function exportToExcel() {
+      if (filteredRegistrations.length === 0) {
+        alert("No data available to export.");
+        return;
+      }
+
+      const rows = filteredRegistrations.map((item, idx) => ({
+        "Sl No": idx + 1,
+        "Full Name": item.fullName,
+        "WhatsApp Number": item.phone,
+        "Full Phone": item.fullPhoneNumber,
+        "Business Category": item.category,
+        "Monthly Revenue": item.revenue,
+        "Registered Time (IST)": item.dateFormattedIST,
+        "Workshop": item.workshop
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Webinar Registrations");
+
+      // Auto-size columns
+      const colWidths = [
+        { wch: 8 },
+        { wch: 22 },
+        { wch: 16 },
+        { wch: 18 },
+        { wch: 28 },
+        { wch: 18 },
+        { wch: 24 },
+        { wch: 34 }
+      ];
+      worksheet["!cols"] = colWidths;
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(workbook, `Webinar_Registrations_IST_${dateStr}.xlsx`);
+    }
+
+    // 6. Export to CSV
+    function exportToCSV() {
+      if (filteredRegistrations.length === 0) {
+        alert("No data available to export.");
+        return;
+      }
+
+      const headers = ["Sl No", "Full Name", "WhatsApp Number", "Full Phone", "Business Category", "Monthly Revenue", "Registered Time (IST)", "Workshop"];
+      const csvRows = [headers.join(",")];
+
+      filteredRegistrations.forEach((item, idx) => {
+        const row = [
+          idx + 1,
+          `"${(item.fullName || "").replace(/"/g, '""')}"`,
+          `"${(item.phone || "").replace(/"/g, '""')}"`,
+          `"${(item.fullPhoneNumber || "").replace(/"/g, '""')}"`,
+          `"${(item.category || "").replace(/"/g, '""')}"`,
+          `"${(item.revenue || "").replace(/"/g, '""')}"`,
+          `"${(item.dateFormattedIST || "").replace(/"/g, '""')}"`,
+          `"${(item.workshop || "").replace(/"/g, '""')}"`
+        ];
+        csvRows.push(row.join(","));
+      });
+
+      const csvString = "\uFEFF" + csvRows.join("\n"); // UTF-8 BOM for Excel compatibility
+      const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const dateStr = new Date().toISOString().slice(0, 10);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Webinar_Registrations_IST_${dateStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>
