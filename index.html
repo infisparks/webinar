@@ -19,6 +19,24 @@
   <meta name="twitter:description" content="Stop losing customers between first click and final sale. Practical live workshop with Faiz Ansari." />
   <meta name="twitter:image" content="https://firstoptionagency.in/hero.png" />
 
+  <!-- Meta Pixel Code -->
+  <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '1307016724814793');
+    fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=1307016724814793&ev=PageView&noscript=1"
+  /></noscript>
+  <!-- End Meta Pixel Code -->
+
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -2258,7 +2276,26 @@
       // 2. Automatically send WhatsApp Confirmation Template message via Cloudflare Worker
       sendWhatsAppConfirmationMessage(phone, name);
 
-      // 3. Switch to Step 2: WhatsApp Community Group Access Screen
+      // 3. Track Meta Pixel Lead & Registration Conversion Events
+      try {
+        if (typeof fbq === 'function') {
+          fbq('track', 'Lead', {
+            content_name: 'The 24/7 Client Acquisition Live Workshop',
+            category: category,
+            currency: 'INR',
+            value: 0.00
+          });
+          fbq('track', 'CompleteRegistration', {
+            content_name: 'The 24/7 Client Acquisition Live Workshop',
+            status: 'registered'
+          });
+          console.log("Meta Pixel Lead & CompleteRegistration events tracked!");
+        }
+      } catch (pixelErr) {
+        console.warn("Meta Pixel tracking error:", pixelErr);
+      }
+
+      // 4. Switch to Step 2: WhatsApp Community Group Access Screen
       document.getElementById("modalStepForm").classList.add("hidden");
       document.getElementById("modalStepWhatsApp").classList.remove("hidden");
       document.getElementById("displayUserName").innerText = name.split(" ")[0] || "Founder";
